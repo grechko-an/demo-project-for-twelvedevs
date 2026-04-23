@@ -11,6 +11,7 @@
     "@testing-library/jest-dom": "^5.11.10",
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^13.1.1",
+    "cheerio": "1.0.0-rc.3",
     "husky": "^6.0.0",
     "js-cookie": "^2.2.1",
     "lint-staged": "^10.5.4",
@@ -21,8 +22,7 @@
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^1.1.1",
-    "cheerio": "1.0.0-rc.3"
+    "web-vitals": "^1.1.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.14",
@@ -31,17 +31,30 @@
     "@babel/preset-env": "^7.13.12",
     "@babel/register": "^7.13.14",
     "@backtrace-labs/javascript-cli": "^0.1.2",
+    "@iflow-mcp/armanayvazyan-allure-testops-mcp": "^1.0.0",
+    "@jules-tnk/ts-http-mcp": "^1.0.0",
+    "@modelcontextprotocol/server-filesystem": "^2026.1.14",
+    "@modelcontextprotocol/server-github": "^2025.4.8",
+    "@modelcontextprotocol/server-postgres": "^0.6.2",
+    "@modelcontextprotocol/server-slack": "^2025.4.25",
+    "@playwright/mcp": "^0.0.70",
+    "@playwright/test": "^1.59.1",
+    "@sonar/scan": "^4.3.6",
     "@storybook/addon-actions": "^6.5.16",
     "@storybook/addon-essentials": "^6.5.16",
     "@storybook/addon-links": "^6.5.16",
+    "@storybook/builder-webpack5": "^6.5.16",
+    "@storybook/manager-webpack5": "^6.5.16",
     "@storybook/node-logger": "^6.5.16",
     "@storybook/preset-create-react-app": "^3.2.0",
     "@storybook/react": "^6.5.16",
-    "@storybook/builder-webpack5": "^6.5.16",
-    "@storybook/manager-webpack5": "^6.5.16",
-    "enzyme": "^3.11.0",
+    "@types/node": "^25.6.0",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.8.0",
+    "allure-commandline": "^2.38.1",
+    "allure-playwright": "^3.7.1",
+    "enzyme": "^3.11.0",
     "enzyme-to-json": "^3.6.1",
+    "mcp-remote": "^0.1.38",
     "prop-types": "^15.7.2",
     "screener-storybook": "^0.21.2",
     "wait-on": "^5.3.0"
@@ -49,7 +62,10 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "playwright test",
+    "test:allure": "playwright test && npm run allure:report",
+    "allure:report": "allure generate allure-results --clean -o allure-report",
+    "allure:open": "allure open allure-report",
     "test.coverage": "react-scripts test --coverage --watchAll=false",
     "test.coverage.watch": "react-scripts test --coverage --watchAll",
     "test.lint": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
@@ -103,8 +119,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "husky": {

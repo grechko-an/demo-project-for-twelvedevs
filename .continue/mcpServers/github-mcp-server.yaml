@@ -1,0 +1,11 @@
+name: "GitHub MCP Server"
+version: "0.0.1"
+schema: "v1"
+mcpServers:
+  - name: "github"
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-github"
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "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"
