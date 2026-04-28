@@ -1,0 +1,24 @@
+{
+  "name": "playwright-automation-framework",
+  "version": "1.0.0",
+  "description": "E2E and API automation framework with Playwright + TypeScript + POM",
+  "scripts": {
+    "test:e2e": "playwright test tests/e2e/",
+    "test:api": "playwright test tests/api/",
+    "test:all": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen"
+  },
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.70",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3",
+    "dotenv": "^16.3.1",
+    "allure-commandline": "^2.38.1",
+    "allure-playwright": "^3.7.1",
+    "prettier": "^2.2.1"
+  }
+}
