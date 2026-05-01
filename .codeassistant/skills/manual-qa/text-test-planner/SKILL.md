@@ -1,5 +1,5 @@
 ---
-name: qa-test-plan
+name: text-test-planner
 description: "Generates a detailed test plan for a feature or bug fix, including positive, negative, and edge‑case scenarios"
 ---
 
