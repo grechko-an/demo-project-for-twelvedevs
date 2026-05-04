@@ -1,28 +1,20 @@
-import { test, expect } from '@playwright/test';
-import { SauceDemoLoginPage } from '../../pages/pages/SauceDemoLoginPage';
-import { InventoryPage } from '../../pages/pages/InventoryPage';
-import { CartPage } from '../../pages/pages/CartPage';
-import { CheckoutStepOnePage } from '../../pages/pages/CheckoutStepOnePage';
-import { CheckoutStepTwoPage } from '../../pages/pages/CheckoutStepTwoPage';
-import { CheckoutCompletePage } from '../../pages/pages/CheckoutCompletePage';
+import { expect } from '@playwright/test';
+import { test, testCheckoutFormValidation } from '../../fixtures/fixtures';
+import { CartPage } from '../../pom/pages/CartPage';
+import { CheckoutStepOnePage } from '../../pom/pages/CheckoutStepOnePage';
+import { CheckoutStepTwoPage } from '../../pom/pages/CheckoutStepTwoPage';
+import { CheckoutCompletePage } from '../../pom/pages/CheckoutCompletePage';
 
 test.describe('SauceDemo Checkout Workflow Tests', () => {
-  let loginPage: SauceDemoLoginPage;
-  let inventoryPage: InventoryPage;
-  let cartPage: CartPage;
-  let checkoutStepOnePage: CheckoutStepOnePage;
-  let checkoutStepTwoPage: CheckoutStepTwoPage;
-  let checkoutCompletePage: CheckoutCompletePage;
-
-  test.beforeEach(async ({ page }) => {
-    loginPage = new SauceDemoLoginPage(page);
-    await loginPage.gotoLoginPage();
-    inventoryPage = await loginPage.loginAsStandardUser();
-    await inventoryPage.verifyPageLoaded();
-  });
-
   test.describe('P0 - Critical Checkout Scenarios', () => {
-    test('CHECKOUT-01: Complete purchase happy path @P0', async ({ page }) => {
+    test('CHECKOUT-01: Complete purchase happy path @P0', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage, 
+      checkoutStepTwoPage, 
+      checkoutCompletePage,
+      page 
+    }) => {
       // Test ID: CHECKOUT-01
       // Priority: P0
       // Steps: 1. Add item to cart, 2. Go to cart, 3. Click Checkout, 
@@ -32,21 +24,17 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Arrange - Add item to cart
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      
-      cartPage = new CartPage(page);
       await cartPage.verifyPageLoaded();
       
       // Act - Proceed to checkout
       await cartPage.proceedToCheckout();
       
       // Step 1: Fill checkout information
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.verifyPageLoaded();
       await checkoutStepOnePage.fillCheckoutInfo('John', 'Doe', '12345');
       await checkoutStepOnePage.continueToNextStep();
       
       // Step 2: Review order
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.verifyPageLoaded();
       
       // Verify order summary
@@ -60,7 +48,6 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       await checkoutStepTwoPage.completePurchase();
       
       // Step 3: Order confirmation
-      checkoutCompletePage = new CheckoutCompletePage(page);
       await checkoutCompletePage.verifyPageLoaded();
       
       // Assert - Verify order completion
@@ -80,7 +67,11 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
   });
 
   test.describe('P1 - Important Checkout Scenarios', () => {
-    test('CHECKOUT-02: Checkout with empty cart @P1', async ({ page }) => {
+    test('CHECKOUT-02: Checkout with empty cart @P1', async ({ 
+      inventoryPage, 
+      cartPage, 
+      page 
+    }) => {
       // Test ID: CHECKOUT-02
       // Priority: P1
       // Steps: 1. Go to cart (empty), 2. Click Checkout
@@ -88,7 +79,6 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
 
       // Arrange - Go to cart without adding items
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.verifyPageLoaded();
       
       // Assert - Verify cart is empty
@@ -109,7 +99,11 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       }
     });
 
-    test('CHECKOUT-03: Checkout form validation @P1', async ({ page }) => {
+    test('CHECKOUT-03: Checkout form validation @P1', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage 
+    }) => {
       // Test ID: CHECKOUT-03
       // Priority: P1
       // Steps: 1. Proceed to checkout, 2. Leave fields empty, 3. Click Continue
@@ -118,10 +112,8 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Arrange - Add item and proceed to checkout
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.verifyPageLoaded();
       
       // Act - Try to continue with empty form
@@ -135,7 +127,12 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       expect(errorText).toContain('First Name'); // Error should mention required field
     });
 
-    test('CHECKOUT-05: Cancel during checkout step 1 @P1', async ({ page }) => {
+    test('CHECKOUT-05: Cancel during checkout step 1 @P1', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      page 
+    }) => {
       // Test ID: CHECKOUT-05
       // Priority: P1
       // Steps: 1. Click Cancel on checkout step 1
@@ -144,10 +141,8 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Arrange - Proceed to checkout step 1
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.verifyPageLoaded();
       
       // Act - Cancel checkout
@@ -162,7 +157,13 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       expect(itemCount).toBe(1);
     });
 
-    test('CHECKOUT-06: Cancel during checkout step 2 @P1', async ({ page }) => {
+    test('CHECKOUT-06: Cancel during checkout step 2 @P1', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      page 
+    }) => {
       // Test ID: CHECKOUT-06
       // Priority: P1
       // Steps: 1. Click Cancel on checkout step 2
@@ -171,14 +172,11 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Arrange - Complete checkout step 1
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo('John', 'Doe', '12345');
       await checkoutStepOnePage.continueToNextStep();
       
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.verifyPageLoaded();
       
       // Act - Cancel purchase
@@ -189,7 +187,13 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       await inventoryPage.verifyPageLoaded();
     });
 
-    test('CHECKOUT-07: Verify order summary details @P1', async ({ page }) => {
+    test('CHECKOUT-07: Verify order summary details @P1', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      page 
+    }) => {
       // Test ID: CHECKOUT-07
       // Priority: P1
       // Steps: 1. Complete checkout step 1, 2. Verify step 2 details
@@ -199,14 +203,11 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       await inventoryPage.addProductToCart(0);
       await inventoryPage.addProductToCart(1);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo('Jane', 'Smith', '54321');
       await checkoutStepOnePage.continueToNextStep();
       
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.verifyPageLoaded();
       
       // Assert - Verify all details
@@ -237,7 +238,11 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
   });
 
   test.describe('P2 - Additional Checkout Scenarios', () => {
-    test('CHECKOUT-04: Checkout with invalid ZIP code @P2', async ({ page }) => {
+    test('CHECKOUT-04: Checkout with invalid ZIP code @P2', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage 
+    }) => {
       // Test ID: CHECKOUT-04
       // Priority: P2
       // Steps: 1. Enter invalid ZIP (letters), 2. Click Continue
@@ -246,10 +251,8 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Arrange - Proceed to checkout step 1
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.verifyPageLoaded();
       
       // Act - Try invalid postal code (letters)
@@ -264,33 +267,38 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       }
     });
 
-    test('Checkout with special characters in name', async ({ page }) => {
+    test('Checkout with special characters in name', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage 
+    }) => {
       // Test with special characters in name fields
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo('John-O\'Connor', 'Doe-Smith', '12345');
       await checkoutStepOnePage.continueToNextStep();
       
       // Should proceed to next step
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.verifyPageLoaded();
     });
 
-    test('Checkout with very long names', async ({ page }) => {
+    test('Checkout with very long names', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      page 
+    }) => {
       // Test with long name fields
       const longFirstName = 'A'.repeat(100);
       const longLastName = 'B'.repeat(100);
       
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo(longFirstName, longLastName, '12345');
       await checkoutStepOnePage.continueToNextStep();
       
@@ -299,7 +307,15 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       // Accept either success or appropriate error
     });
 
-    test('Checkout with different product combinations', async ({ page }) => {
+    test('Checkout with different product combinations', async ({ 
+      loginPage,
+      inventoryPage,
+      cartPage,
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      checkoutCompletePage,
+      page 
+    }) => {
       // Test checkout with various product combinations
       const testCases = [
         { products: [0], description: 'Single product' },
@@ -310,7 +326,7 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       for (const testCase of testCases) {
         // Reset for each test case
         await loginPage.gotoLoginPage();
-        inventoryPage = await loginPage.loginAsStandardUser();
+        const inventoryPage = await loginPage.loginAsStandardUser();
         
         // Add products
         for (const productIndex of testCase.products) {
@@ -319,14 +335,14 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
         
         // Complete checkout
         await inventoryPage.goToCart();
-        cartPage = new CartPage(page);
+        const cartPage = new CartPage(page);
         await cartPage.proceedToCheckout();
         
-        checkoutStepOnePage = new CheckoutStepOnePage(page);
+        const checkoutStepOnePage = new CheckoutStepOnePage(page);
         await checkoutStepOnePage.fillCheckoutInfo('Test', 'User', '12345');
         await checkoutStepOnePage.continueToNextStep();
         
-        checkoutStepTwoPage = new CheckoutStepTwoPage(page);
+        const checkoutStepTwoPage = new CheckoutStepTwoPage(page);
         await checkoutStepTwoPage.verifyPageLoaded();
         
         // Verify correct number of items
@@ -336,7 +352,7 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
         // Complete purchase
         await checkoutStepTwoPage.completePurchase();
         
-        checkoutCompletePage = new CheckoutCompletePage(page);
+        const checkoutCompletePage = new CheckoutCompletePage(page);
         await checkoutCompletePage.verifyPageLoaded();
         
         // Take screenshot for each test case
@@ -352,13 +368,14 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
   });
 
   test.describe('Checkout Error Handling', () => {
-    test('Checkout form field validation sequence', async ({ page }) => {
+    test('Checkout form field validation sequence', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage 
+    }) => {
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
-      
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       
       // Test validation with different invalid inputs
       const testCases = [
@@ -368,26 +385,13 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
         { firstName: 'John', lastName: 'Doe', postalCode: 'ABC', expectedError: 'Postal' }
       ];
       
-      for (const testCase of testCases) {
-        await checkoutStepOnePage.clearForm();
-        await checkoutStepOnePage.fillCheckoutInfo(
-          testCase.firstName,
-          testCase.lastName,
-          testCase.postalCode
-        );
-        await checkoutStepOnePage.continueToNextStep();
-        
-        const hasError = await checkoutStepOnePage.isErrorDisplayed();
-        expect(hasError).toBe(true);
-        
-        if (hasError) {
-          const errorText = await checkoutStepOnePage.getErrorMessage();
-          expect(errorText).toContain(testCase.expectedError);
-        }
-      }
+      await testCheckoutFormValidation(checkoutStepOnePage, testCases);
     });
 
-    test('Checkout with problem_user account', async ({ page }) => {
+    test('Checkout with problem_user account', async ({ 
+      loginPage,
+      page 
+    }) => {
       // Login as problem_user
       await loginPage.gotoLoginPage();
       const problemInventory = await loginPage.login('problem_user', 'secret_sauce');
@@ -410,21 +414,23 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
   });
 
   test.describe('Checkout Completion and Post-Purchase', () => {
-    test('Verify post-purchase state', async ({ page }) => {
+    test('Verify post-purchase state', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      checkoutCompletePage,
+      page 
+    }) => {
       // Complete a purchase
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo('John', 'Doe', '12345');
       await checkoutStepOnePage.continueToNextStep();
       
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.completePurchase();
-      
-      checkoutCompletePage = new CheckoutCompletePage(page);
       
       // Validate post-purchase state
       const validation = await checkoutCompletePage.validatePostPurchaseState();
@@ -440,22 +446,25 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       await inventoryPage.verifyPageLoaded();
     });
 
-    test('Multiple purchases in sequence', async ({ page }) => {
+    test('Multiple purchases in sequence', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      checkoutCompletePage,
+      page 
+    }) => {
       // Make multiple purchases in a row
       for (let i = 0; i < 2; i++) {
         await inventoryPage.addProductToCart(i);
         await inventoryPage.goToCart();
-        cartPage = new CartPage(page);
         await cartPage.proceedToCheckout();
         
-        checkoutStepOnePage = new CheckoutStepOnePage(page);
         await checkoutStepOnePage.fillCheckoutInfo(`User${i}`, `Test${i}`, `1234${i}`);
         await checkoutStepOnePage.continueToNextStep();
         
-        checkoutStepTwoPage = new CheckoutStepTwoPage(page);
         await checkoutStepTwoPage.completePurchase();
         
-        checkoutCompletePage = new CheckoutCompletePage(page);
         await checkoutCompletePage.verifyPageLoaded();
         
         // Go back for next purchase
@@ -464,21 +473,22 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       }
     });
 
-    test('Verify checkout complete page elements', async ({ page }) => {
+    test('Verify checkout complete page elements', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      checkoutCompletePage 
+    }) => {
       // Complete a purchase to get to completion page
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
       
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       await checkoutStepOnePage.fillCheckoutInfo('John', 'Doe', '12345');
       await checkoutStepOnePage.continueToNextStep();
       
-      checkoutStepTwoPage = new CheckoutStepTwoPage(page);
       await checkoutStepTwoPage.completePurchase();
-      
-      checkoutCompletePage = new CheckoutCompletePage(page);
       
       // Verify all elements
       const elements = await checkoutCompletePage.verifyAllElementsDisplayed();
@@ -497,13 +507,15 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
   });
 
   test.describe('Accessibility and UI Tests', () => {
-    test('Verify checkout form accessibility', async ({ page }) => {
+    test('Verify checkout form accessibility', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      page 
+    }) => {
       await inventoryPage.addProductToCart(0);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
       await cartPage.proceedToCheckout();
-      
-      checkoutStepOnePage = new CheckoutStepOnePage(page);
       
       // Check form field labels
       const firstNameInput = checkoutStepOnePage.firstNameInput;
@@ -526,7 +538,13 @@ test.describe('SauceDemo Checkout Workflow Tests', () => {
       await expect(postalCodeInput).toBeFocused();
     });
 
-    test('Take checkout workflow screenshots', async ({ page }) => {
+    test('Take checkout workflow screenshots', async ({ 
+      inventoryPage, 
+      cartPage, 
+      checkoutStepOnePage,
+      checkoutStepTwoPage,
+      page 
+    }) => {
       // Document entire checkout workflow
       await inventoryPage.addProductToCart(0);
       await page.screenshot({ 

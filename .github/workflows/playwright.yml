@@ -1,32 +1,151 @@
 name: Playwright Tests
+
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
+    paths:
+      - 'pw/**'
+      - '.github/workflows/playwright.yml'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
+    paths:
+      - 'pw/**'
+      - '.github/workflows/playwright.yml'
+
 jobs:
-  test:
-    timeout-minutes: 60
+  api-tests-push:
+    name: API Tests (on push)
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
+    if: github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: ./pw
     
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-        
-    - name: Install dependencies
-      run: npm ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'pw/package-lock.json'
       
-    - name: Run Playwright tests
-      run: npx playwright test
+      - name: Install dependencies
+        run: npm ci
       
-    - uses: actions/upload-artifact@v4
-      if: ${{ ! cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run API tests
+        run: npm run test:api
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-api-push-results
+          path: |
+            pw/test-results/
+            pw/playwright-report/
+            pw/allure-results/
+          retention-days: 7
+
+  pr-api-p0-tests:
+    name: API P0 Tests (on PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ./pw
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'pw/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run API tests (all considered P0 for PR)
+        run: npm run test:api
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-api-pr-results
+          path: |
+            pw/test-results/
+            pw/playwright-report/
+            pw/allure-results/
+          retention-days: 7
+
+  pr-e2e-p0-tests:
+    name: E2E P0 Tests (on PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: ./pw
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'pw/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      
+      - name: Run E2E P0 tests
+        run: npx playwright test --grep "@P0" tests/e2e/
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-pr-results
+          path: |
+            pw/test-results/
+            pw/playwright-report/
+            pw/allure-results/
+          retention-days: 7
+
+  test-report:
+    name: Test Report
+    runs-on: ubuntu-latest
+    needs: [api-tests-push, pr-api-p0-tests, pr-e2e-p0-tests]
+    if: always()
+    
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Generate summary
+        run: |
+          echo "# Playwright Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Jobs completed:" >> $GITHUB_STEP_SUMMARY
+          echo "- API Tests (push): ${{ needs.api-tests-push.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API P0 Tests (PR): ${{ needs.pr-api-p0-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E P0 Tests (PR): ${{ needs.pr-e2e-p0-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All test jobs have completed. Check artifacts for detailed reports." >> $GITHUB_STEP_SUMMARY

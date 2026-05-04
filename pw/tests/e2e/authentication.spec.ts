@@ -1,17 +1,13 @@
-import { test, expect } from '@playwright/test';
-import { SauceDemoLoginPage } from '../../pages/pages/SauceDemoLoginPage';
-import { InventoryPage } from '../../pages/pages/InventoryPage';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/fixtures';
+import { InventoryPage } from '../../pom/pages/InventoryPage';
 
 test.describe('SauceDemo Authentication Tests', () => {
-  let loginPage: SauceDemoLoginPage;
-
-  test.beforeEach(async ({ page }) => {
-    loginPage = new SauceDemoLoginPage(page);
-    await loginPage.gotoLoginPage();
-  });
-
   test.describe('P0 - Critical Authentication Scenarios', () => {
-    test('AUTH-01: Successful login with valid credentials @P0', async ({ page }) => {
+    test('AUTH-01: Successful login with valid credentials @P0', async ({ 
+      loginPage, 
+      page 
+    }) => {
       // Test ID: AUTH-01
       // Priority: P0
       // Steps: 1. Navigate to login page, 2. Enter valid username/password, 3. Click Login
@@ -32,28 +28,39 @@ test.describe('SauceDemo Authentication Tests', () => {
       await page.screenshot({ path: 'test-results/auth-successful.png', fullPage: true });
     });
 
-    test('AUTH-04: Login with locked_out_user @P0', async ({ page }) => {
+    test('AUTH-04: Login with locked_out_user @P0', async ({ 
+      loginPage, 
+      page,
+      testCredentials 
+    }) => {
       // Test ID: AUTH-04
       // Priority: P0
       // Steps: 1. Enter locked_out_user, 2. Enter secret_sauce, 3. Click Login
       // Expected: Error "Sorry, this user has been locked out." appears
 
       // Act
-      await loginPage.loginAsLockedOutUser();
+      await loginPage.login(
+        testCredentials.lockedOutUser.username,
+        testCredentials.lockedOutUser.password
+      );
 
       // Assert
       await expect(loginPage.errorMessage).toBeVisible();
       const errorText = await loginPage.getErrorMessageText();
       expect(errorText).toContain('Sorry, this user has been locked out.');
       
-      // Verify still on login page
-      await expect(page).toHaveURL(/.*index.html/);
+      // Verify still on login page (SauceDemo uses root URL for login)
+      await expect(page).toHaveURL(/.*saucedemo.com\/?$/);
       await loginPage.verifyPageLoaded();
     });
   });
 
   test.describe('P1 - Important Authentication Scenarios', () => {
-    test('AUTH-02: Login with invalid username @P1', async ({ page }) => {
+    test('AUTH-02: Login with invalid username @P1', async ({ 
+      loginPage, 
+      page,
+      testCredentials 
+    }) => {
       // Test ID: AUTH-02
       // Priority: P1
       // Steps: 1. Enter invalid username, 2. Enter valid password, 3. Click Login
@@ -61,7 +68,7 @@ test.describe('SauceDemo Authentication Tests', () => {
 
       // Arrange
       const invalidUsername = 'invalid_user';
-      const validPassword = 'secret_sauce';
+      const validPassword = testCredentials.standardUser.password;
 
       // Act
       const errorText = await loginPage.attemptInvalidLogin(invalidUsername, validPassword);
@@ -69,17 +76,21 @@ test.describe('SauceDemo Authentication Tests', () => {
       // Assert
       expect(errorText).toContain('Username and password do not match');
       await expect(loginPage.errorMessage).toBeVisible();
-      await expect(page).toHaveURL(/.*index.html/);
+      await expect(page).toHaveURL(/.*saucedemo.com\/?$/);
     });
 
-    test('AUTH-03: Login with invalid password @P1', async ({ page }) => {
+    test('AUTH-03: Login with invalid password @P1', async ({ 
+      loginPage, 
+      page,
+      testCredentials 
+    }) => {
       // Test ID: AUTH-03
       // Priority: P1
       // Steps: 1. Enter valid username, 2. Enter invalid password, 3. Click Login
       // Expected: Error message displayed, user stays on login page
 
       // Arrange
-      const validUsername = 'standard_user';
+      const validUsername = testCredentials.standardUser.username;
       const invalidPassword = 'wrong_password';
 
       // Act
@@ -88,17 +99,21 @@ test.describe('SauceDemo Authentication Tests', () => {
       // Assert
       expect(errorText).toContain('Username and password do not match');
       await expect(loginPage.errorMessage).toBeVisible();
-      await expect(page).toHaveURL(/.*index.html/);
+      await expect(page).toHaveURL(/.*saucedemo.com\/?$/);
     });
 
-    test('AUTH-05: Logout functionality @P1', async ({ page }) => {
+    test('AUTH-05: Logout functionality @P1', async ({ 
+      authenticatedPageAsStandardUser,
+      loginPage 
+    }) => {
       // Test ID: AUTH-05
       // Priority: P1
       // Steps: 1. Login successfully, 2. Open menu, 3. Click Logout
       // Expected: User is redirected to login page
 
       // Arrange
-      const inventoryPage = await loginPage.loginAsStandardUser();
+      const page = authenticatedPageAsStandardUser;
+      const inventoryPage = new InventoryPage(page);
       await inventoryPage.verifyPageLoaded();
 
       // Act - Logout via menu
@@ -108,15 +123,18 @@ test.describe('SauceDemo Authentication Tests', () => {
       await menuButton.click();
 
       // Assert
-      await expect(page).toHaveURL(/.*index.html/);
+      await expect(page).toHaveURL(/.*saucedemo.com\/?$/);
       await loginPage.verifyPageLoaded();
       
       // Verify cannot access inventory directly
       await page.goto('/inventory.html');
-      await expect(page).toHaveURL(/.*index.html/);
+      await expect(page).toHaveURL(/.*saucedemo.com\/?$/);
     });
 
-    test('AUTH-06: Access protected page without login @P1', async ({ page }) => {
+    test('AUTH-06: Access protected page without login @P1', async ({ 
+      loginPage, 
+      page 
+    }) => {
       // Test ID: AUTH-06
       // Priority: P1
       // Steps: 1. Navigate directly to /inventory.html, 2. Verify page
@@ -138,7 +156,7 @@ test.describe('SauceDemo Authentication Tests', () => {
   });
 
   test.describe('Additional Authentication Tests', () => {
-    test('Login with empty credentials', async ({ page }) => {
+    test('Login with empty credentials', async ({ loginPage }) => {
       // Test empty username
       await loginPage.attemptInvalidLogin('', 'secret_sauce');
       await expect(loginPage.errorMessage).toBeVisible();
@@ -153,11 +171,15 @@ test.describe('SauceDemo Authentication Tests', () => {
       expect(errorText2).toContain('Password is required');
     });
 
-    test('Login with problem_user account', async ({ page }) => {
+    test('Login with problem_user account', async ({ 
+      loginPage, 
+      page,
+      testCredentials 
+    }) => {
       // This user has known issues but should still login
       const inventoryPage = await loginPage.login(
-        'problem_user',
-        'secret_sauce'
+        testCredentials.problemUser.username,
+        testCredentials.problemUser.password
       );
       
       await expect(page).toHaveURL(/.*inventory.html/);
@@ -168,18 +190,22 @@ test.describe('SauceDemo Authentication Tests', () => {
       expect(productCount).toBeGreaterThan(0);
     });
 
-    test('Login with performance_glitch_user', async ({ page }) => {
+    test('Login with performance_glitch_user', async ({ 
+      loginPage, 
+      page,
+      testCredentials 
+    }) => {
       // This user has performance delays but should still login
       const inventoryPage = await loginPage.login(
-        'performance_glitch_user',
-        'secret_sauce'
+        testCredentials.performanceGlitchUser.username,
+        testCredentials.performanceGlitchUser.password
       );
       
       await expect(page).toHaveURL(/.*inventory.html/);
       await inventoryPage.verifyPageLoaded();
     });
 
-    test('Verify login form elements', async ({ page }) => {
+    test('Verify login form elements', async ({ loginPage }) => {
       // Verify all form elements are present
       await expect(loginPage.usernameInput).toBeVisible();
       await expect(loginPage.passwordInput).toBeVisible();
@@ -199,7 +225,7 @@ test.describe('SauceDemo Authentication Tests', () => {
       await expect(loginPage.passwordCredentials).toBeVisible();
     });
 
-    test('Verify available credentials from page', async ({ page }) => {
+    test('Verify available credentials from page', async ({ loginPage }) => {
       const credentials = await loginPage.getAvailableCredentialsFromPage();
       
       // Verify we got the expected usernames
@@ -214,9 +240,12 @@ test.describe('SauceDemo Authentication Tests', () => {
   });
 
   test.describe('Session and Security Tests', () => {
-    test('Session persistence after refresh', async ({ page }) => {
-      // Login
-      const inventoryPage = await loginPage.loginAsStandardUser();
+    test('Session persistence after refresh', async ({ 
+      authenticatedPageAsStandardUser 
+    }) => {
+      // Login is already done by the fixture
+      const page = authenticatedPageAsStandardUser;
+      const inventoryPage = new InventoryPage(page);
       await inventoryPage.verifyPageLoaded();
       
       // Refresh page
@@ -227,7 +256,7 @@ test.describe('SauceDemo Authentication Tests', () => {
       await inventoryPage.verifyPageLoaded();
     });
 
-    test('Multiple failed login attempts', async ({ page }) => {
+    test('Multiple failed login attempts', async ({ loginPage, page }) => {
       // Attempt multiple failed logins
       for (let i = 0; i < 3; i++) {
         await loginPage.attemptInvalidLogin('wrong_user', 'wrong_pass');
@@ -239,6 +268,38 @@ test.describe('SauceDemo Authentication Tests', () => {
       const inventoryPage = await loginPage.loginAsStandardUser();
       await expect(page).toHaveURL(/.*inventory.html/);
       await inventoryPage.verifyPageLoaded();
+    });
+
+    test('Clean context authentication with helper', async ({ 
+      loginWithCleanContext 
+    }) => {
+      // Test the loginWithCleanContext helper
+      const { page, inventoryPage } = await loginWithCleanContext(
+        'standard_user',
+        'secret_sauce'
+      );
+      
+      await expect(page).toHaveURL(/.*inventory.html/);
+      await inventoryPage.verifyPageLoaded();
+      
+      // Verify we can interact with the inventory
+      await expect(inventoryPage.productContainer).toBeVisible();
+    });
+
+    test('Login as different users using helper', async ({ 
+      loginAsUser,
+      testCredentials 
+    }) => {
+      // Test problem user
+      const problemInventoryPage = await loginAsUser(
+        testCredentials.problemUser.username,
+        testCredentials.problemUser.password
+      );
+      await problemInventoryPage.verifyPageLoaded();
+      
+      // Test performance glitch user
+      // Note: This would need a new page since we can't reuse the same page
+      // For demonstration, we show the helper works
     });
   });
 });

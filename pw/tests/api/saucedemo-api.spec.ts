@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { SauceDemoApiUtils, AnalyticsEvent } from './api-utils';
+import { SauceDemoApiUtils, AnalyticsEvent } from '../../utils/api-utils';
 
 test.describe('SauceDemo API Tests', () => {
   let apiUtils: SauceDemoApiUtils;

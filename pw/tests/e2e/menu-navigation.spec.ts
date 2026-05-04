@@ -1,26 +1,13 @@
-import { test, expect } from '@playwright/test';
-import { SauceDemoLoginPage } from '../../pages/pages/SauceDemoLoginPage';
-import { InventoryPage } from '../../pages/pages/InventoryPage';
-import { MenuComponent } from '../../pages/components/MenuComponent';
-import { HeaderComponent } from '../../pages/components/HeaderComponent';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/fixtures';
 
 test.describe('SauceDemo Menu & Navigation Tests', () => {
-  let loginPage: SauceDemoLoginPage;
-  let inventoryPage: InventoryPage;
-  let menu: MenuComponent;
-  let header: HeaderComponent;
-
-  test.beforeEach(async ({ page }) => {
-    loginPage = new SauceDemoLoginPage(page);
-    await loginPage.gotoLoginPage();
-    inventoryPage = await loginPage.loginAsStandardUser();
-    await inventoryPage.verifyPageLoaded();
-    menu = new MenuComponent(page);
-    header = new HeaderComponent(page);
-  });
-
   test.describe('P1 - Important Menu Scenarios', () => {
-    test('MENU-01: All Items link @P1', async ({ page }) => {
+    test('MENU-01: All Items link @P1', async ({ 
+      page, 
+      inventoryPage, 
+      menu 
+    }) => {
       // Test ID: MENU-01
       // Priority: P1
       // Steps: 1. Open menu, 2. Click "All Items"
@@ -39,7 +26,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       await inventoryPage.verifyPageLoaded();
     });
 
-    test('MENU-02: About link @P2', async ({ page, context }) => {
+    test('MENU-02: About link @P2', async ({ 
+      page, 
+      context, 
+      menu 
+    }) => {
       // Test ID: MENU-02
       // Priority: P2
       // Steps: 1. Open menu, 2. Click "About"
@@ -62,7 +53,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       // as it opens saucelabs.com which may have different structure
     });
 
-    test('MENU-03: Reset App State @P2', async ({ page }) => {
+    test('MENU-03: Reset App State @P2', async ({ 
+      inventoryPage, 
+      menu, 
+      header 
+    }) => {
       // Test ID: MENU-03
       // Priority: P2
       // Steps: 1. Add items to cart, 2. Open menu, 3. Click "Reset App State"
@@ -91,7 +86,9 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(addButtonsCount).toBe(productCount);
     });
 
-    test('MENU-04: Menu open/close functionality @P2', async ({ page }) => {
+    test('MENU-04: Menu open/close functionality @P2', async ({ 
+      menu 
+    }) => {
       // Test ID: MENU-04
       // Priority: P2
       // Steps: 1. Click menu button, 2. Verify menu opens, 3. Click close/X
@@ -109,7 +106,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(functionality.resetClickable).toBe(true);
     });
 
-    test('AUTH-05: Logout functionality via menu @P1', async ({ page }) => {
+    test('AUTH-05: Logout functionality via menu @P1', async ({ 
+      page, 
+      menu, 
+      loginPage 
+    }) => {
       // Test ID: AUTH-05 (also covers logout)
       // Priority: P1
       // Steps: 1. Login successfully, 2. Open menu, 3. Click Logout
@@ -133,7 +134,9 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
   });
 
   test.describe('Menu Functionality Tests', () => {
-    test('Verify all menu items are present', async ({ page }) => {
+    test('Verify all menu items are present', async ({ 
+      menu 
+    }) => {
       await menu.open();
       
       // Verify all menu items are visible
@@ -158,7 +161,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(resetLink).not.toBeNull();
     });
 
-    test('Menu persists after page navigation', async ({ page }) => {
+    test('Menu persists after page navigation', async ({ 
+      page, 
+      inventoryPage, 
+      menu 
+    }) => {
       // Open menu
       await menu.open();
       const isOpenBefore = await menu.isOpen();
@@ -179,7 +186,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(isOpenAgain).toBe(true);
     });
 
-    test('Menu keyboard navigation', async ({ page }) => {
+    test('Menu keyboard navigation', async ({ 
+      page, 
+      menu 
+    }) => {
       await menu.open();
       
       // Test tab navigation within menu
@@ -200,7 +210,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       await page.waitForTimeout(1000);
     });
 
-    test('Menu close with Escape key', async ({ page }) => {
+    test('Menu close with Escape key', async ({ 
+      page, 
+      menu 
+    }) => {
       await menu.open();
       let isOpen = await menu.isOpen();
       expect(isOpen).toBe(true);
@@ -214,7 +227,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(isOpen).toBe(false);
     });
 
-    test('Menu close by clicking outside', async ({ page }) => {
+    test('Menu close by clicking outside', async ({ 
+      page, 
+      menu 
+    }) => {
       await menu.open();
       let isOpen = await menu.isOpen();
       expect(isOpen).toBe(true);
@@ -230,7 +246,12 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
   });
 
   test.describe('Reset App State Detailed Tests', () => {
-    test('Reset app state with items in cart', async ({ page }) => {
+    test('Reset app state with items in cart', async ({ 
+      inventoryPage, 
+      menu, 
+      header, 
+      page 
+    }) => {
       // Add multiple items
       const productCount = await inventoryPage.getProductCount();
       for (let i = 0; i < Math.min(3, productCount); i++) {
@@ -254,7 +275,12 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(removeCount).toBe(0);
     });
 
-    test('Reset app state preserves login session', async ({ page }) => {
+    test('Reset app state preserves login session', async ({ 
+      page, 
+      inventoryPage, 
+      menu, 
+      header 
+    }) => {
       // Add items and reset
       await inventoryPage.addProductToCart(0);
       await menu.clickResetAppState();
@@ -269,7 +295,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(cartCount).toBe(1);
     });
 
-    test('Reset app state multiple times', async ({ page }) => {
+    test('Reset app state multiple times', async ({ 
+      inventoryPage, 
+      menu, 
+      header 
+    }) => {
       // Test reset multiple times in sequence
       for (let i = 0; i < 3; i++) {
         // Add item
@@ -286,7 +316,12 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
   });
 
   test.describe('Navigation Flow Tests', () => {
-    test('Complete navigation flow using menu', async ({ page }) => {
+    test('Complete navigation flow using menu', async ({ 
+      page, 
+      inventoryPage, 
+      menu, 
+      header 
+    }) => {
       // Start on inventory
       await inventoryPage.verifyPageLoaded();
       
@@ -314,7 +349,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(logoutSuccessful).toBe(true);
     });
 
-    test('Navigation between pages maintains menu state', async ({ page }) => {
+    test('Navigation between pages maintains menu state', async ({ 
+      page, 
+      inventoryPage, 
+      menu 
+    }) => {
       // Open menu on inventory
       await menu.open();
       let isOpen = await menu.isOpen();
@@ -338,7 +377,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
   });
 
   test.describe('Menu Accessibility Tests', () => {
-    test('Verify menu ARIA attributes', async ({ page }) => {
+    test('Verify menu ARIA attributes', async ({ 
+      page, 
+      menu 
+    }) => {
       await menu.open();
       
       // Check menu container ARIA attributes
@@ -357,7 +399,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(closeAriaLabel).toBeTruthy();
     });
 
-    test('Verify menu items have proper roles', async ({ page }) => {
+    test('Verify menu items have proper roles', async ({ 
+      page, 
+      menu 
+    }) => {
       await menu.open();
       
       // Menu items should be links or buttons
@@ -372,7 +417,10 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       }
     });
 
-    test('Verify menu focus management', async ({ page }) => {
+    test('Verify menu focus management', async ({ 
+      page, 
+      menu 
+    }) => {
       // Open menu
       await menu.open();
       
@@ -403,13 +451,20 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
   });
 
   test.describe('Error Handling & Edge Cases', () => {
-    test('Menu functionality with problem_user', async ({ page }) => {
+    test('Menu functionality with problem_user', async ({ 
+      page, 
+      loginPage, 
+      loginAsUser, 
+      testCredentials 
+    }) => {
       // Login as problem_user
-      await loginPage.gotoLoginPage();
-      const problemInventory = await loginPage.login('problem_user', 'secret_sauce');
+      const problemInventory = await loginAsUser(
+        testCredentials.problemUser.username,
+        testCredentials.problemUser.password
+      );
       await problemInventory.verifyPageLoaded();
       
-      const problemMenu = new MenuComponent(page);
+      const problemMenu = new (await import('../../pom/components/MenuComponent')).MenuComponent(page);
       
       // Try to open menu
       await problemMenu.open();
@@ -418,13 +473,20 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect([true, false]).toContain(isOpen);
     });
 
-    test('Menu functionality with performance_glitch_user', async ({ page }) => {
+    test('Menu functionality with performance_glitch_user', async ({ 
+      page, 
+      loginPage, 
+      loginAsUser, 
+      testCredentials 
+    }) => {
       // Login as performance_glitch_user
-      await loginPage.gotoLoginPage();
-      const perfInventory = await loginPage.login('performance_glitch_user', 'secret_sauce');
+      const perfInventory = await loginAsUser(
+        testCredentials.performanceGlitchUser.username,
+        testCredentials.performanceGlitchUser.password
+      );
       await perfInventory.verifyPageLoaded();
       
-      const perfMenu = new MenuComponent(page);
+      const perfMenu = new (await import('../../pom/components/MenuComponent')).MenuComponent(page);
       
       // Open menu (might be slow)
       await perfMenu.open();
@@ -437,7 +499,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(isClosed).toBe(true);
     });
 
-    test('Menu with maximum items in cart', async ({ page }) => {
+    test('Menu with maximum items in cart', async ({ 
+      inventoryPage, 
+      menu, 
+      header 
+    }) => {
       // Fill cart with all items
       const productCount = await inventoryPage.getProductCount();
       for (let i = 0; i < productCount; i++) {
@@ -453,7 +519,11 @@ test.describe('SauceDemo Menu & Navigation Tests', () => {
       expect(cartCount).toBe(0);
     });
 
-    test('Take menu screenshots for documentation', async ({ page }) => {
+    test('Take menu screenshots for documentation', async ({ 
+      page, 
+      inventoryPage, 
+      menu 
+    }) => {
       // Screenshot of closed state
       await page.screenshot({ 
         path: 'test-results/menu-closed.png',

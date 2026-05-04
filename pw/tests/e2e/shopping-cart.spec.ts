@@ -1,25 +1,9 @@
-import { test, expect } from '@playwright/test';
-import { SauceDemoLoginPage } from '../../pages/pages/SauceDemoLoginPage';
-import { InventoryPage } from '../../pages/pages/InventoryPage';
-import { CartPage } from '../../pages/pages/CartPage';
-import { HeaderComponent } from '../../pages/components/HeaderComponent';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/fixtures';
 
 test.describe('SauceDemo Shopping Cart Tests', () => {
-  let loginPage: SauceDemoLoginPage;
-  let inventoryPage: InventoryPage;
-  let cartPage: CartPage;
-  let header: HeaderComponent;
-
-  test.beforeEach(async ({ page }) => {
-    loginPage = new SauceDemoLoginPage(page);
-    await loginPage.gotoLoginPage();
-    inventoryPage = await loginPage.loginAsStandardUser();
-    await inventoryPage.verifyPageLoaded();
-    header = new HeaderComponent(page);
-  });
-
   test.describe('P0 - Critical Cart Scenarios', () => {
-    test('CART-01: Add single item to cart @P0', async ({ page }) => {
+    test('CART-01: Add single item to cart @P0', async ({ page, inventoryPage, header }) => {
       // Test ID: CART-01
       // Priority: P0
       // Steps: 1. Click "Add to cart" on any product, 2. Verify cart badge updates
@@ -54,7 +38,7 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
   });
 
   test.describe('P1 - Important Cart Scenarios', () => {
-    test('CART-02: Add multiple items to cart @P1', async ({ page }) => {
+    test('CART-02: Add multiple items to cart @P1', async ({ inventoryPage, header, addItemsToCart }) => {
       // Test ID: CART-02
       // Priority: P1
       // Steps: 1. Add 3 different products, 2. Verify cart badge
@@ -62,13 +46,10 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
 
       // Arrange
       const itemsToAdd = 3;
+      const indices = [0, 1, 2];
       
-      // Act - Add multiple products
-      for (let i = 0; i < itemsToAdd; i++) {
-        await inventoryPage.addProductToCart(i);
-        // Small delay between adds
-        await page.waitForTimeout(100);
-      }
+      // Act - Add multiple products using helper
+      await addItemsToCart(indices);
       
       // Assert
       const cartCount = await header.getCartItemCount();
@@ -79,7 +60,7 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(removeButtonsCount).toBe(itemsToAdd);
     });
 
-    test('CART-03: Remove item from cart (inventory page) @P1', async ({ page }) => {
+    test('CART-03: Remove item from cart (inventory page) @P1', async ({ inventoryPage, header }) => {
       // Test ID: CART-03
       // Priority: P1
       // Steps: 1. Add item to cart, 2. Click "Remove", 3. Verify cart badge
@@ -103,18 +84,14 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       await expect(addButton).toHaveText('Add to cart');
     });
 
-    test('CART-04: Remove item from cart (cart page) @P1', async ({ page }) => {
+    test('CART-04: Remove item from cart (cart page) @P1', async ({ page, inventoryPage, header, goToCartWithItems }) => {
       // Test ID: CART-04
       // Priority: P1
       // Steps: 1. Add item, 2. Go to cart page, 3. Click "Remove"
       // Expected: Item removed from cart, cart empty message shown
 
-      // Arrange - Add item and go to cart
-      await inventoryPage.addProductToCart(0);
-      await inventoryPage.goToCart();
-      
-      cartPage = new CartPage(page);
-      await cartPage.verifyPageLoaded();
+      // Arrange - Add item and go to cart using helper
+      const { cartPage } = await goToCartWithItems([0]);
       
       let itemCount = await cartPage.getCartItemCount();
       expect(itemCount).toBe(1);
@@ -135,18 +112,14 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(cartCount).toBe(0);
     });
 
-    test('CART-05: Continue Shopping button @P1', async ({ page }) => {
+    test('CART-05: Continue Shopping button @P1', async ({ page, inventoryPage, goToCartWithItems }) => {
       // Test ID: CART-05
       // Priority: P1
       // Steps: 1. Go to cart page, 2. Click "Continue Shopping"
       // Expected: Redirected to inventory page
 
-      // Arrange - Add item and go to cart
-      await inventoryPage.addProductToCart(0);
-      await inventoryPage.goToCart();
-      
-      cartPage = new CartPage(page);
-      await cartPage.verifyPageLoaded();
+      // Arrange - Add item and go to cart using helper
+      const { cartPage } = await goToCartWithItems([0]);
       
       // Act - Click Continue Shopping
       await cartPage.continueShopping();
@@ -158,15 +131,14 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
   });
 
   test.describe('P2 - Additional Cart Scenarios', () => {
-    test('CART-06: Cart persists after page refresh @P2', async ({ page }) => {
+    test('CART-06: Cart persists after page refresh @P2', async ({ page, inventoryPage, header, addItemsToCart }) => {
       // Test ID: CART-06
       // Priority: P2
       // Steps: 1. Add items to cart, 2. Refresh page, 3. Verify cart
       // Expected: Cart items preserved
 
-      // Arrange - Add multiple items
-      await inventoryPage.addProductToCart(0);
-      await inventoryPage.addProductToCart(1);
+      // Arrange - Add multiple items using helper
+      await addItemsToCart([0, 1]);
       
       const cartCountBefore = await header.getCartItemCount();
       expect(cartCountBefore).toBe(2);
@@ -184,7 +156,7 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(removeButtonsCount).toBe(2);
     });
 
-    test('Add and remove multiple items in sequence', async ({ page }) => {
+    test('Add and remove multiple items in sequence', async ({ inventoryPage, header }) => {
       // Test complex cart operations
       const operations = [
         { action: 'add', index: 0 },
@@ -209,22 +181,16 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
         // Verify cart count after each operation
         const cartCount = await header.getCartItemCount();
         expect(cartCount).toBe(expectedCount);
-        
-        await page.waitForTimeout(100);
       }
     });
 
-    test('Verify cart item details match inventory', async ({ page }) => {
+    test('Verify cart item details match inventory', async ({ page, inventoryPage, goToCartWithItems }) => {
       // Add specific product and verify details in cart
       const productIndex = 2;
       const inventoryDetails = await inventoryPage.getProductDetails(productIndex);
       
-      // Add to cart and go to cart page
-      await inventoryPage.addProductToCart(productIndex);
-      await inventoryPage.goToCart();
-      
-      cartPage = new CartPage(page);
-      await cartPage.verifyPageLoaded();
+      // Add to cart and go to cart page using helper
+      const { cartPage } = await goToCartWithItems([productIndex]);
       
       // Get cart item details
       const cartDetails = await cartPage.getCartItemDetails(0);
@@ -236,24 +202,20 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(cartDetails.quantity).toBe('1');
     });
 
-    test('Verify cart total calculation', async ({ page }) => {
+    test('Verify cart total calculation', async ({ page, inventoryPage, goToCartWithItems }) => {
       // Add multiple items and verify total
-      const itemsToAdd = [0, 1, 2]; // Add first 3 products
+      const indices = [0, 1, 2]; // Add first 3 products
       let expectedTotal = 0;
       
       // Get prices and calculate expected total
-      for (const index of itemsToAdd) {
+      for (const index of indices) {
         const details = await inventoryPage.getProductDetails(index);
         const price = parseFloat(details.price.replace('$', ''));
         expectedTotal += price;
-        
-        await inventoryPage.addProductToCart(index);
       }
       
-      // Go to cart and verify total
-      await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
-      await cartPage.verifyPageLoaded();
+      // Add items and go to cart using helper
+      const { cartPage } = await goToCartWithItems(indices);
       
       const actualTotal = await cartPage.getTotalPrice();
       expect(actualTotal).toBeCloseTo(expectedTotal, 2);
@@ -261,24 +223,15 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
   });
 
   test.describe('Cart Page Functionality', () => {
-    test.beforeEach(async ({ page }) => {
-      // Add items and go to cart for cart page tests
-      await inventoryPage.addProductToCart(0);
-      await inventoryPage.addProductToCart(1);
-      await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
-      await cartPage.verifyPageLoaded();
-    });
-
-    test('Verify cart page elements', async ({ page }) => {
+    test('Verify cart page elements', async ({ cartPage, page }) => {
       // Verify all cart page elements are visible
       await expect(cartPage.cartContainer).toBeVisible();
       await expect(cartPage.continueShoppingButton).toBeVisible();
       await expect(cartPage.checkoutButton).toBeVisible();
       
-      // Verify cart has items
+      // Verify cart has items (cartPage fixture adds one item by default)
       const itemCount = await cartPage.getCartItemCount();
-      expect(itemCount).toBe(2);
+      expect(itemCount).toBe(1);
       
       // Verify item details are displayed
       await expect(cartPage.itemNames.first()).toBeVisible();
@@ -286,12 +239,15 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       await expect(cartPage.removeButtons.first()).toBeVisible();
     });
 
-    test('Remove all items from cart page', async ({ page }) => {
+    test('Remove all items from cart page', async ({ cartPage, header, authenticatedPageWithCartItems }) => {
+      // Create a page with multiple items
+      const { cartPage: cartPageWithItems } = await authenticatedPageWithCartItems(2);
+      
       // Remove all items
-      await cartPage.removeAllItems();
+      await cartPageWithItems.removeAllItems();
       
       // Verify cart is empty
-      const itemCount = await cartPage.getCartItemCount();
+      const itemCount = await cartPageWithItems.getCartItemCount();
       expect(itemCount).toBe(0);
       
       // Verify cart badge is empty
@@ -299,13 +255,16 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(cartCount).toBe(0);
       
       // Verify checkout button might be disabled (depends on implementation)
-      const checkoutEnabled = await cartPage.verifyCheckoutEnabled();
+      const checkoutEnabled = await cartPageWithItems.verifyCheckoutEnabled();
       // Some implementations disable checkout when cart is empty
     });
 
-    test('Verify item verification methods', async ({ page }) => {
+    test('Verify item verification methods', async ({ inventoryPage, goToCartWithItems }) => {
       // Get details of first product from inventory
       const inventoryDetails = await inventoryPage.getProductDetails(0);
+      
+      // Add item and go to cart using helper
+      const { cartPage } = await goToCartWithItems([0]);
       
       // Verify item is in cart
       const itemInCart = await cartPage.verifyItemInCart(inventoryDetails.name);
@@ -321,7 +280,7 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(cartDetails.price).toBe(inventoryDetails.price);
     });
 
-    test('Navigate to checkout from cart', async ({ page }) => {
+    test('Navigate to checkout from cart', async ({ cartPage, page }) => {
       // Verify checkout button is enabled
       const checkoutEnabled = await cartPage.verifyCheckoutEnabled();
       expect(checkoutEnabled).toBe(true);
@@ -335,11 +294,9 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
   });
 
   test.describe('Edge Cases and Error Handling', () => {
-    test('Cart operations with problem_user', async ({ page }) => {
+    test('Cart operations with problem_user', async ({ loginPage, header, loginAsUserType }) => {
       // Login as problem_user
-      await loginPage.gotoLoginPage();
-      const problemInventory = await loginPage.login('problem_user', 'secret_sauce');
-      await problemInventory.verifyPageLoaded();
+      const problemInventory = await loginAsUserType('problem');
       
       // Try to add items (problem_user might have issues)
       await problemInventory.addProductToCart(0);
@@ -350,30 +307,26 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect([0, 1]).toContain(cartCount);
     });
 
-    test('Cart operations with performance_glitch_user', async ({ page }) => {
+    test('Cart operations with performance_glitch_user', async ({ loginPage, header, loginAsUserType, page }) => {
       // Login as performance_glitch_user
-      await loginPage.gotoLoginPage();
-      const perfInventory = await loginPage.login('performance_glitch_user', 'secret_sauce');
-      await perfInventory.verifyPageLoaded();
+      const perfInventory = await loginAsUserType('performance');
       
       // Add item with potential delay
       await perfInventory.addProductToCart(0);
       
-      // Wait longer for cart update due to performance glitch
-      await page.waitForTimeout(2000);
-      
-      // Verify cart updated
-      const cartCount = await header.getCartItemCount();
-      expect(cartCount).toBe(1);
+      // Wait for cart update due to performance glitch
+      await expect.poll(async () => await header.getCartItemCount(), {
+        timeout: 5000
+      }).toBe(1);
     });
 
-    test('Maximum items in cart', async ({ page }) => {
+    test('Maximum items in cart', async ({ inventoryPage, header, page, addItemsToCart }) => {
       // Add all available products to cart
       const productCount = await inventoryPage.getProductCount();
       
-      for (let i = 0; i < productCount; i++) {
-        await inventoryPage.addProductToCart(i);
-      }
+      // Create array of all indices
+      const allIndices = Array.from({ length: productCount }, (_, i) => i);
+      await addItemsToCart(allIndices);
       
       // Verify all items added
       const cartCount = await header.getCartItemCount();
@@ -381,17 +334,22 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       
       // Go to cart and verify all items present
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
+      const cartPage = new (await import('../../pom/pages/CartPage')).CartPage(page);
       await cartPage.verifyPageLoaded();
       
       const cartItemCount = await cartPage.getCartItemCount();
       expect(cartItemCount).toBe(productCount);
     });
 
-    test('Cart empty state', async ({ page }) => {
+    test('Cart empty state', async ({ authenticatedPage }) => {
+      // Use a clean authenticated page (no items in cart)
+      const page = authenticatedPage;
+      
       // Go to cart without adding items
+      const inventoryPage = new (await import('../../pom/pages/InventoryPage')).InventoryPage(page);
       await inventoryPage.goToCart();
-      cartPage = new CartPage(page);
+      
+      const cartPage = new (await import('../../pom/pages/CartPage')).CartPage(page);
       await cartPage.verifyPageLoaded();
       
       // Verify cart is empty
@@ -403,15 +361,15 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       // Some implementations disable checkout when cart is empty
       
       // Take screenshot of empty cart
-      await page.screenshot({ 
+      await page.screenshot({
         path: 'test-results/cart-empty.png',
-        fullPage: true 
+        fullPage: true
       });
     });
   });
 
   test.describe('Accessibility and UI Tests', () => {
-    test('Verify cart badge accessibility', async ({ page }) => {
+    test('Verify cart badge accessibility', async ({ inventoryPage, header }) => {
       // Add item to make badge visible
       await inventoryPage.addProductToCart(0);
       
@@ -427,7 +385,7 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       expect(color).toBeTruthy();
     });
 
-    test('Verify cart button states', async ({ page }) => {
+    test('Verify cart button states', async ({ inventoryPage, page }) => {
       // Test button state transitions
       const firstProduct = inventoryPage.productItems.first();
       const addButton = firstProduct.locator('button:has-text("Add to cart")');
@@ -452,25 +410,28 @@ test.describe('SauceDemo Shopping Cart Tests', () => {
       await expect(removeButton).toBeHidden();
     });
 
-    test('Take cart screenshots for documentation', async ({ page }) => {
-      // Empty cart
-      await inventoryPage.goToCart();
-      await page.screenshot({ 
+    test('Take cart screenshots for documentation', async ({ inventoryPage, page, authenticatedPage }) => {
+      // Empty cart - use clean authenticated page
+      const cleanPage = authenticatedPage;
+      const cleanInventoryPage = new (await import('../../pom/pages/InventoryPage')).InventoryPage(cleanPage);
+      await cleanInventoryPage.goToCart();
+      const emptyCartPage = new (await import('../../pom/pages/CartPage')).CartPage(cleanPage);
+      await cleanPage.screenshot({
         path: 'test-results/cart-empty-state.png',
-        fullPage: true 
+        fullPage: true
       });
       
       // Back to inventory and add items
       // First need to go back to inventory from cart
-      await cartPage.continueShopping();
-      await inventoryPage.addProductToCart(0);
-      await inventoryPage.addProductToCart(1);
+      await emptyCartPage.continueShopping();
+      await cleanInventoryPage.addProductToCart(0);
+      await cleanInventoryPage.addProductToCart(1);
       
       // Cart with items
-      await inventoryPage.goToCart();
-      await page.screenshot({ 
+      await cleanInventoryPage.goToCart();
+      await cleanPage.screenshot({
         path: 'test-results/cart-with-items.png',
-        fullPage: true 
+        fullPage: true
       });
     });
   });
