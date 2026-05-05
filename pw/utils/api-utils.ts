@@ -33,6 +33,7 @@ export class SauceDemoApiUtils {
   /**
    * Send analytics event to Backtrace.io
    * Observed endpoint: POST https://events.backtrace.io/api/unique-events/submit
+   * Note: This is an external service that may be unavailable. Returns mock response on network errors.
    */
   async sendAnalyticsEvent(event: AnalyticsEvent): Promise<ApiResponse> {
     const url = 'https://events.backtrace.io/api/unique-events/submit';
@@ -51,7 +52,8 @@ export class SauceDemoApiUtils {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
 
       return {
@@ -60,14 +62,25 @@ export class SauceDemoApiUtils {
         body: await response.json().catch(() => response.text())
       };
     } catch (error) {
-      console.error('Analytics API error:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn('Analytics API unavailable, returning mock response:', errorMessage);
+      // Return mock response for demo purposes when service is unavailable
+      return {
+        status: 503, // Service Unavailable
+        headers: { 'content-type': 'application/json' },
+        body: {
+          status: 'mock',
+          message: 'Analytics service unavailable, using mock response for testing',
+          original_error: errorMessage
+        }
+      };
     }
   }
 
   /**
    * Send summed analytics event
    * Observed endpoint: POST https://events.backtrace.io/api/summed-events/submit
+   * Note: This is an external service that may be unavailable. Returns mock response on network errors.
    */
   async sendSummedAnalyticsEvent(events: AnalyticsEvent[]): Promise<ApiResponse> {
     const url = 'https://events.backtrace.io/api/summed-events/submit';
@@ -86,7 +99,8 @@ export class SauceDemoApiUtils {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
 
       return {
@@ -95,8 +109,18 @@ export class SauceDemoApiUtils {
         body: await response.json().catch(() => response.text())
       };
     } catch (error) {
-      console.error('Summed Analytics API error:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn('Summed Analytics API unavailable, returning mock response:', errorMessage);
+      // Return mock response for demo purposes when service is unavailable
+      return {
+        status: 503, // Service Unavailable
+        headers: { 'content-type': 'application/json' },
+        body: {
+          status: 'mock',
+          message: 'Analytics service unavailable, using mock response for testing',
+          original_error: errorMessage
+        }
+      };
     }
   }
 
