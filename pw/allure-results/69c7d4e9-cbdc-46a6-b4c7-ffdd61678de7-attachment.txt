@@ -1,0 +1,1 @@
+Note: SauceDemo allows checkout with empty cart

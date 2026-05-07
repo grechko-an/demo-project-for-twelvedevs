@@ -1,0 +1,12 @@
+Analytics response: {
+  status: 400,
+  headers: {
+    server: 'openresty',
+    date: 'Wed, 06 May 2026 09:46:31 GMT',
+    'content-type': 'text/plain; charset=utf-8',
+    'content-length': '20',
+    connection: 'close',
+    'strict-transport-security': 'max-age=63072000, max-age=63072000'
+  },
+  body: 'Invalid query string'
+}

@@ -1,0 +1,5 @@
+Data type test (string): { status: 400, value: 'string_value' }
+Data type test (number): { status: 400, value: 123 }
+Data type test (number): { status: 400, value: 123.45 }
+Data type test (boolean): { status: 400, value: true }
+Data type test (null): { status: 400, value: null }

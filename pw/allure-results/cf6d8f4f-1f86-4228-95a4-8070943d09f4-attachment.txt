@@ -1,0 +1,1 @@
+Inventory API endpoint not available (404) - expected for demo site
